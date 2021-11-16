@@ -1,0 +1,31 @@
+version: "3"
+services:
+  sanic-stage.script:
+    container_name: sanic-stage.script
+    build:
+      context: .
+      dockerfile: Dockerfile
+    labels:
+      app_name: "sanic-stage.script"
+      env: "pd"
+    restart: "no"
+    tty: true
+    stdin_open: true
+    working_dir: /data/home
+    command: inv -c script_worker run-scripts-long
+    environment:
+      TZ: "Asia/Shanghai"
+      ENV_MODE: "pd"
+      COLUMNS: 80
+      LOG_LEVEL: "INFO"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "10"
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1452

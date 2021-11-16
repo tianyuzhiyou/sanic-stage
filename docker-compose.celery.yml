@@ -1,0 +1,31 @@
+version: "3"
+services:
+  sanic-stage.celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sanic-stage.celery
+    labels:
+      app_name: "sanic-stage.celery"
+      env: "pd"
+    restart: always
+    tty: true
+    stdin_open: true
+    working_dir: /data/home
+    command: celery -A worker:celery_app worker --concurrency=3 -P celery_pool_asyncio:TaskPool --scheduler celery_pool_asyncio:PersistentScheduler --loglevel DEBUG
+    environment:
+      TZ: "Asia/Shanghai"
+      ENV_MODE: "pd"
+      COLUMNS: 80
+      LOG_LEVEL: "DEBUG"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2m"
+        max-file: "10"
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1452
