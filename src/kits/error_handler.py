@@ -8,6 +8,10 @@ from kits.status_code import Code
 from .exception import Error
 from utils.loggers import access_logger
 
+"""
+自定义错误处理方式
+"""
+
 
 def customer_exception_handler(request, exception):
     if isinstance(exception, Error):
@@ -38,7 +42,7 @@ def customer_exception_handler(request, exception):
         exc_data = None
 
         # 出现服务器错误，记录错误日志
-        if request.app.config.get("ADD_REQUEST", False):
+        if request.app.config.get("ADD_REQUEST_LOG", False):
             access_logger.error(f"url: {request.path}, method: {request.method},err:{str(exception)}", exc_info=True)
 
         if request and request.app.config.DEBUG:

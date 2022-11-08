@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-from sanic import Sanic
+"""
+定义从consul获取配置数据自动更新任务
+"""
 
+from sanic import Sanic
 from drivers.consul import DynamicConfigFromConsul
 
 

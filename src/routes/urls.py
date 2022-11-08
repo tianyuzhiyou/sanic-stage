@@ -4,22 +4,21 @@
 
 from apps.ping import (
     PingView,
-    LoggerView,
     PingMysqlView,
     PingRedisView,
-    SentryView,
-    PingCeleryView,
 )
+from apps.api import examples
 
 
 def register_routes(app):
     # 基本url
     app.add_route(PingView.as_view(), '/ping')
-    app.add_route(SentryView.as_view(), "/ping_sentry")
     app.add_route(PingRedisView.as_view(), '/ping_redis')
     app.add_route(PingMysqlView.as_view(), '/ping_mysql')
-    app.add_route(LoggerView.as_view(), '/logger')
-    app.add_route(PingCeleryView.as_view(), "/ping_celery")
+
+    # 业务url
+    app.add_route(examples.TestGetView.as_view(), "/test_get")
+    app.add_route(examples.TestPostView.as_view(), "/test_post")
 
 
 __all__ = ["register_routes"]

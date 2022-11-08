@@ -5,7 +5,7 @@ with open('./src/requirements.txt') as f:
 
 setup(
     name='sanic-stage',
-    version='0.0.1',
+    version='0.0.2',
     description='web框架sanic脚手架封装',
     author='tianyuzhiyou',
     author_email="626004181@qq.com",

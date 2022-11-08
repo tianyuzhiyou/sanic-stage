@@ -23,3 +23,4 @@ sanic-openapi3e==0.6.4
 invoke==1.4.1
 aiomysql==0.0.22
 sqlalchemy==1.4.27
+pytest-asyncio==0.20.1

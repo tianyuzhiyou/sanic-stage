@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import asyncio
 import functools
 import traceback
 from typing import Any
@@ -19,7 +18,6 @@ __all__ = [
     'put',
     'delete',
     'request',
-    'gather_request',
     'APIClient',
     'join_url',
     "intranet_route"

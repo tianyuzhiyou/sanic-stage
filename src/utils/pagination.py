@@ -1,30 +1,59 @@
 # -*- coding: utf-8 -*-
 """
-简单分页工具
+分页工具
 """
 
-
-def get_paging_parameter(parameter_dict: dict):
-    p = int(parameter_dict.pop('p', 1))
-    limit = int(parameter_dict.pop('limit', 10))
-    offset = parameter_dict.pop('offset', None)
-
-    if p < 1:
-        p = 1
-    if limit < 1:
-        limit = 1
-    elif limit > 1000:
-        limit = 1000
-    if offset:
-        offset = int(offset) if int(offset) >= 0 else 0
-    else:
-        offset = (p - 1) * limit
-    return parameter_dict, p, limit, offset
+from collections import OrderedDict
 
 
-def get_totalpage(total_count: int, limit: int):
-    return total_count // limit if total_count % limit == 0 else total_count // limit + 1
+class Pagination(object):
+    max_limit = 100
 
+    def __init__(self, p: int = 1, limit: int = 10):
+        self.limit = self.__get_limit(limit)
+        self.page = self.__get_page(p)
+        self.total_page = None
+        self.total_count = 0
 
-def get_offset(p: int, limit: int):
-    return (p - 1) * limit
+    def __get_limit(self, limit: int) -> int:
+        """
+        获取请求中，每页多少行
+        """
+        return limit if limit < self.max_limit else self.max_limit
+
+    def __get_page(self, page: int) -> int:
+        """
+        获取请求中，当前第几页
+        """
+        return page if page > 0 else 1
+
+    def get_offset(self) -> int:
+        """
+        获取请求中，当前开始行的下标(一般用页码，而不使用这个值)
+        """
+        return (self.page - 1) * self.limit
+
+    def get_total_page(self, total_count: int):
+        """
+        @desc 获取总页数
+        :param total_count:
+        :return:
+        """
+        self.total_page = total_count // self.limit if total_count % self.limit == 0 else total_count // self.limit + 1
+        self.total_count = total_count
+        return self.total_page
+
+    async def get_paginated_response(self, data: list) -> dict:
+        """
+        分页条返回内容
+        :param data:
+        :return:
+        """
+        return OrderedDict([
+            ('p', self.page),
+            ('limit', self.limit),
+            ('offset', self.get_offset()),
+            ('totalpage', self.total_page),
+            ('total_count', self.total_count),
+            ('objects', data)
+        ])

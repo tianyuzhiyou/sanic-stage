@@ -30,6 +30,7 @@ MYSQL_CONFIG = {
 }
 
 # redis配置
+
 REDIS_CONFIG = {
     "default": {
         "address": "redis://127.0.0.1:6379/0",

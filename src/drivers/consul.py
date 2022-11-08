@@ -19,6 +19,7 @@ class DynamicConfigFromConsul(object):
         self.sync_consul = SyncConsul(host=self.host, port=self.port)
 
     def init_config(self, config):
+        # 从consul获取配置动态加载配置
         index = 0
         index, data = self.sync_consul.kv.get(self.namespace_path, index=index, wait='1s', recurse=True)
 
@@ -30,7 +31,7 @@ class DynamicConfigFromConsul(object):
             config.update(consul_config)
 
     async def update_config(self, config, loop):
-
+        # 动态更新配置
         if self.consul is None:
             self.consul = AioConsul(host=self.host, port=self.port, loop=loop)
 
@@ -38,13 +39,11 @@ class DynamicConfigFromConsul(object):
         while True:
             try:
                 index, data = await self.consul.kv.get(self.namespace_path, index=index, wait='3s', recurse=True)
-
                 if bool(data):
                     consul_config_data = self.loads_configs(data)
                     consul_config = consul_config_data.get(self.app_type.upper(), {})
 
                     config.update(consul_config)
-
             except asyncio.TimeoutError:
                 pass
 

@@ -137,11 +137,11 @@ class RedisStrProxy(RedisBaseProxy):
     async def get(self, key: str) -> str:
         """获取字节类型"""
         data = await self.client.get(key)
-        return data.decode("utf-8") if data else data
+        return data if data else None
 
     async def set(self, key: str, value: str, ex: int = 10) -> bool:
         """设置字符串"""
-        data = await self.client.set(key, value, expire=ex)
+        data = await self.client.set(key, value.encode("utf-8"), expire=ex)
         return bool(data)
 
     async def get_data(self, key: str) -> Any:

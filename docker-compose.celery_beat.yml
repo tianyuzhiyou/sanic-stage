@@ -12,7 +12,7 @@ services:
     tty: true
     stdin_open: true
     working_dir: /data/home
-    command: celery -A worker:celery_app beat --scheduler celery_pool_asyncio:PersistentScheduler --loglevel DEBUG
+    command: celery -A celery_worker:celery_app beat --scheduler celery_pool_asyncio:PersistentScheduler --loglevel info
     environment:
       TZ: "Asia/Shanghai"
       ENV_MODE: "pd"

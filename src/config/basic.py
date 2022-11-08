@@ -11,7 +11,7 @@ ENV_MODE = os.getenv('ENV_MODE', 'local')  # 当前环境
 DEBUG = strtobool(str(os.getenv("DEBUG", True)))  # 是否开启DEBUG模式
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')  # 日志等级
 
-ADD_REQUEST = False  # 是否开启http请求日志详细打印，默认false
+ADD_REQUEST_LOG = False  # 是否开启http请求日志详细打印，默认false
 # 需要排除不打印日志的url
 EXCLUDE_LOG_URL_MAP = {}
 
@@ -34,6 +34,7 @@ CONSUL_HOSTS = {
 SENTRY_DSN = ""
 
 # mysql config
+ENABLE_DB = False # 是否启用mysql
 MYSQL_CONFIG = {
     # "default": {
     # "host": "127.0.0.1",
@@ -48,6 +49,7 @@ MYSQL_CONFIG = {
 }
 
 # redis config
+ENABLE_REDIS = False # 是否启用redis
 REDIS_CONFIG = {
     # "default": {
     # "address": "redis://:127.0.0.1:6379/0",

@@ -12,7 +12,7 @@ services:
     tty: true
     stdin_open: true
     working_dir: /data/home
-    command: celery -A worker:celery_app worker --concurrency=3 -P celery_pool_asyncio:TaskPool --scheduler celery_pool_asyncio:PersistentScheduler --loglevel DEBUG
+    command: celery -A celery_worker:celery_app worker --concurrency=3 -P celery_pool_asyncio:TaskPool --scheduler celery_pool_asyncio:PersistentScheduler --loglevel DEBUG
     environment:
       TZ: "Asia/Shanghai"
       ENV_MODE: "pd"

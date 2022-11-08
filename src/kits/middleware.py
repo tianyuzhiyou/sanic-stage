@@ -23,8 +23,9 @@ async def init_app_context(request):
     context.set('x-platform', str(request.headers.get('x-platform', '')).upper())
 
 
+# 请求中间件
 async def request_middleware(request):
-    await init_app_context(request)
+    await init_app_context(request)  # 添加上下文
     request.ctx.run_time = time.time()
     await request_hijack_middleware(request)
 
@@ -46,14 +47,9 @@ async def bare_dict_as_http_response(request, response):
             status=200,
         )
 
-    if request.app.config.get("ADD_REQUEST", False):
+    if request.app.config.get("ADD_REQUEST_LOG", False):
         request.app.add_task(add_request_log(request, response))
 
-    return response
-
-
-async def response_middleware(request: Request, response: HTTPResponse):
-    response = await bare_dict_as_http_response(request, response)
     return response
 
 
@@ -100,6 +96,12 @@ async def add_request_log(request: Request, response: HTTPResponse):
             http_extra['result'] = response.body[:2000]
 
     access_logger.info("access url: {} msg: {}".format(request.path, http_extra))
+
+
+# 响应中间件
+async def response_middleware(request: Request, response: HTTPResponse):
+    response = await bare_dict_as_http_response(request, response)
+    return response
 
 
 def register_middlewares(app: Sanic):
