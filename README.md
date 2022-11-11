@@ -85,11 +85,13 @@ docker-compose -f docker-compose.yml up -d
 
 #### 配置文件
 
+```
 config
 ├── __init__.py
 ├── basic.py
 |── celery_config.py
 └── local_config.py
+```
 
 - basic.py
 
