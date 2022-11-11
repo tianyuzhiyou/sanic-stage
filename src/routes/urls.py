@@ -12,6 +12,7 @@ from apps.api import examples
 
 def register_routes(app):
     # 基本url
+    app.add_route(PingView.as_view(), '/')
     app.add_route(PingView.as_view(), '/ping')
     app.add_route(PingRedisView.as_view(), '/ping_redis')
     app.add_route(PingMysqlView.as_view(), '/ping_mysql')

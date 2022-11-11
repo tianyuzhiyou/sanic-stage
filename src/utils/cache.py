@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 import asyncio
 from typing import Any
 
-from drivers.redis import redis_db
+from drivers.redis import redis_db, RedisCache
 from utils.json_tool import json_dumps, json_loads
 
 
@@ -91,7 +91,7 @@ class RedisLockProxy(RedisBaseProxy):
         """
         @desc 为当前KEY加锁, 默认30秒自动解锁,
         uri: https://redis.cn/commands/setnx.html
-        1. 使用setnx命令，值为time.time()+expire+1,永久有效
+        1. 使用setnx命令，值为time.time()+expire,永久有效
         2. 获取锁的所有客户在锁返回0时，尝试去检查锁的过期时间，未过期则重复尝试；
         3. 过期后使用getset获取锁；
         4. 执行完程序后主动释放锁，但是有可能程序的执行时间大于上锁的时间，导致锁超时失效，被其它客户获取到。
@@ -100,7 +100,7 @@ class RedisLockProxy(RedisBaseProxy):
         key = self._lock_key % key
         end_lock_time = time.time() + lock_timeout
         while 1:
-            timestamp = str(time.time() + 1 + expire)
+            timestamp = str(time.time() + expire)
             # 尝试上锁
             if await self.client.setnx(key, timestamp):
                 self.locked = timestamp
@@ -109,16 +109,16 @@ class RedisLockProxy(RedisBaseProxy):
             # 发现已经有锁，查看锁到期时间
             lock_timestamp = await self.client.get(key)
             # 发现当前时间大于锁的到期时间，重置锁的同时获取之前的时间戳，并记录新的时间戳
-            if lock_timestamp and str(time.time()) > str(lock_timestamp.decode("utf-8")):
+            if lock_timestamp and float(time.time()) > float(lock_timestamp.decode("utf-8")):
                 old_timestamp = await self.client.getset(key, timestamp)
                 # 如果时间戳没有发生改变，说明没有谁抢着上锁
                 if lock_timestamp == old_timestamp:
                     self.locked = timestamp
                     return self.locked
             else:
-                await asyncio.sleep(step)
                 # 检查是否等待超时，超时抛出异常
                 self.check_lock_timeout(end_lock_time)
+                await asyncio.sleep(step)
 
     async def release_lock(self, key: str):
         """
@@ -207,4 +207,93 @@ class RedisProxy(RedisZsetProxy,
     cache = RedisProxy()
     cache.get("key_name")
     """
-    pass
+
+    @asynccontextmanager
+    async def with_cache(self,
+                         key: str,
+                         ex: int = 30,
+                         is_json: bool = False,
+                         is_update: bool = True,
+                         is_except: bool = False) -> Any:
+        """
+        @desc 将SimpleCache封装成上下文管理器，便于使用
+        for example:
+        async with CacheProxy().with_cache("name") as cache:
+            if cache.data:
+                return cache.data
+            data = "do something"
+            cache.data = data
+            return cache.data
+        """
+        s_cache = AsyncSimpleCache(key, ex=ex, cache=self.redis_db, is_json=is_json, is_update=is_update, is_except=is_except)
+        try:
+            s_cache.data = await s_cache.get()
+            if s_cache.data:
+                s_cache.update = False
+            yield s_cache
+        finally:
+            if s_cache.update and s_cache.data:
+                await s_cache.set()
+
+
+class AsyncSimpleCache(object):
+
+    def __init__(self,
+                 key: str,
+                 ex: int = 30,
+                 cache: RedisCache = None,
+                 is_json: bool = False,
+                 is_update: bool = True,
+                 is_except: bool = True):
+        """只针对字符串和json的缓存异步上下文管理器"""
+        self._key = key
+        self._expire = ex
+        self._client = cache
+        self.data = None
+        self.json = is_json
+        self.update = is_update
+        self._except = is_except
+
+    async def get(self):
+        """获取数据"""
+        if self.json:
+            data = await self._client.common.hgetall(self._key)
+            if data:
+                return {key: json_loads(val) for key, val in dict(data).items()}
+            return {}
+        else:
+            res = await self._client.common.get(self._key)
+            return json_loads(res) if res else None
+
+    async def set(self):
+        """保存数据"""
+        if self.json:
+            assert isinstance(self.data, dict)
+            cache_data = {k: json_dumps(v) for k, v in self.data.items()}
+            pipe = self._client.common.pipeline()
+            pipe.hmset_dict(self._key, **cache_data)
+            pipe.expire(self._key, int(self._expire))
+            res = await pipe.execute()
+            return res[0]
+        else:
+            # 默认字节类型，需要编码
+            return await self._client.common.set(self._key, json_dumps(self.data), expire=self._expire)
+
+    async def __aenter__(self):
+        self.data = await self.get()
+        if self.data:
+            self.update = False
+        return self
+
+    async def __aexit__(self, typ, value, traceback):
+        if self.update and self.data:
+            await self.set()
+            return True
+        if not self._except:
+            return True
+
+    def __enter__(self):
+        assert ValueError("只允许异步调用！")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        assert ValueError("只允许异步调用！")
